@@ -1,0 +1,65 @@
+rules:
+  - name: "GitHub Ticket Creation"
+    description: "Ensure new tickets follow proper format."
+    conditions:
+      - event: "issue_created"
+      - field: "title"
+        pattern: "^[A-Z].{10,}$" # Ensure title starts with uppercase and is at least 10 chars
+      - field: "labels"
+        required: true
+    actions:
+      - notify: "Slack #github-tickets"
+      - assign: "team-lead"
+
+  - name: "GitHub Ticket Assignment"
+    description: "Ensure tickets are assigned within 24 hours."
+    conditions:
+      - event: "issue_updated"
+      - field: "assignee"
+        exists: false
+      - time_elapsed: "24h"
+    actions:
+      - comment: "@project-manager This issue has not been assigned yet."
+      - notify: "Slack #ticket-triage"
+
+  - name: "GitHub Ticket Status Update"
+    description: "Ensure tickets are updated every 3 days."
+    conditions:
+      - event: "issue_updated"
+      - field: "updated_at"
+        time_elapsed: "3d"
+    actions:
+      - comment: "@assignee Please provide an update on this issue."
+      - notify: "Email assignee"
+
+  - name: "GitHub Ticket Closure"
+    description: "Ensure tickets are closed only when all tasks are completed."
+    conditions:
+      - event: "issue_closed"
+      - field: "labels"
+        contains: "done"
+      - field: "comments"
+        contains: "Resolved"
+    actions:
+      - notify: "Slack #completed-tickets"
+      - close_issue: true
+
+labels:
+  - name: "bug"
+    description: "Indicates a problem that needs to be fixed."
+  - name: "enhancement"
+    description: "Indicates a new feature request or improvement."
+  - name: "urgent"
+    description: "Requires immediate attention."
+  - name: "wontfix"
+    description: "Issue that will not be addressed."
+  - name: "need more clarity"
+    description: "Requires additional details or clarification."
+  - name: "Incident"
+    description: "Represents an unexpected event that needs investigation."
+  - name: "Service Request 📌"
+    description: "Requests for specific services or support."
+  - name: "Task"
+    description: "Represents a specific action item or task."
+  - name: "Change Request"
+    description: "Requests for changes to existing processes or configurations."
